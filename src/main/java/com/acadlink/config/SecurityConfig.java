@@ -48,9 +48,18 @@ public class SecurityConfig {
                 .requestMatchers("/uploads/**").permitAll()
                 // Publications : lecture publique
                 .requestMatchers(HttpMethod.GET, "/api/publications/**").permitAll()
+                
                 // Projets et recherches : lecture publique
-                .requestMatchers(HttpMethod.GET, "/api/projets/**").hasRole("ETUDIANT")
-                .requestMatchers(HttpMethod.GET, "/api/recherches/**").hasAnyRole("ENSEIGNANT", "CHERCHEUR")
+                .requestMatchers(HttpMethod.GET, "/api/projets/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/projets/**").hasRole("ETUDIANT")
+                .requestMatchers(HttpMethod.PUT, "/api/projets/**").hasRole("ETUDIANT")
+                .requestMatchers(HttpMethod.DELETE, "/api/projets/**").hasRole("ETUDIANT")
+                
+                .requestMatchers(HttpMethod.GET, "/api/recherches/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/recherches/**").hasAnyRole("ENSEIGNANT", "CHERCHEUR")
+                .requestMatchers(HttpMethod.PUT, "/api/recherches/**").hasAnyRole("ENSEIGNANT", "CHERCHEUR")
+                .requestMatchers(HttpMethod.DELETE, "/api/recherches/**").hasAnyRole("ENSEIGNANT", "CHERCHEUR")
+                
                 // Profils : lecture publique
                 .requestMatchers(HttpMethod.GET, "/api/utilisateurs/**").permitAll()
                 // Admin

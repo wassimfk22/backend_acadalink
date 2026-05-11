@@ -2,9 +2,7 @@ package com.acadlink.controller;
 
 import com.acadlink.dto.RechercheDtoRequest;
 import com.acadlink.dto.RechercheDtoResponse;
-import com.acadlink.entity.Chercheur;
-import com.acadlink.entity.Recherche;
-import com.acadlink.entity.Utilisateur;
+import com.acadlink.entity.*;
 import com.acadlink.enums.Role;
 import com.acadlink.repository.RechercheRepository;
 import com.acadlink.repository.UtilisateurRepository;
@@ -34,15 +32,22 @@ public class RechercheController {
         return ResponseEntity.ok(rechercheRepository.findByChercheurId(userId).stream().map(this::toDto).toList());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<RechercheDtoResponse> getById(@PathVariable Long id) {
+        Recherche r = rechercheRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Recherche non trouvée"));
+        return ResponseEntity.ok(toDto(r));
+    }
+
     @GetMapping("/search")
     public ResponseEntity<List<RechercheDtoResponse>> search(@RequestParam String q) {
         String query = q == null ? "" : q.trim().toLowerCase();
         return ResponseEntity.ok(
                 rechercheRepository.findAll().stream()
-                        .filter(r -> (r.getTitre() != null && r.getTitre().toLowerCase().contains(query))
-                                || (r.getDomaine() != null && r.getDomaine().toLowerCase().contains(query))
-                                || (r.getDescription() != null && r.getDescription().toLowerCase().contains(query))
-                                || (r.getProbleme() != null && r.getProbleme().toLowerCase().contains(query)))
+                        .filter(r -> matches(r.getTitre(), query)
+                                || matches(r.getDomaine(), query)
+                                || matches(r.getDescription(), query)
+                                || matches(r.getProbleme(), query))
                         .map(this::toDto)
                         .toList()
         );
@@ -51,14 +56,35 @@ public class RechercheController {
     @PostMapping
     public ResponseEntity<RechercheDtoResponse> create(
             @AuthenticationPrincipal CustomUserDetails user,
-            @RequestBody RechercheDtoRequest dto
-    ) {
+            @RequestBody RechercheDtoRequest dto) {
+
         Utilisateur baseUser = utilisateurRepository.findById(user.getId())
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
-        if (baseUser.getRoleUtilisateur() != Role.CHERCHEUR || !(baseUser instanceof Chercheur chercheur)) {
+
+        // Accepte CHERCHEUR et ENSEIGNANT (les deux peuvent publier des recherches)
+        if (baseUser.getRoleUtilisateur() == Role.CHERCHEUR && baseUser instanceof Chercheur chercheur) {
+            Recherche recherche = buildRecherche(dto, chercheur);
+            return ResponseEntity.ok(toDto(rechercheRepository.save(recherche)));
+        } else {
             throw new RuntimeException("Seul un chercheur peut publier une recherche");
         }
-        Recherche recherche = Recherche.builder()
+    }
+
+    // AJOUT : suppression sécurisée par le propriétaire
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id,
+                                        @AuthenticationPrincipal CustomUserDetails user) {
+        Recherche r = rechercheRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Recherche non trouvée"));
+        if (!r.getChercheur().getId().equals(user.getId())) {
+            throw new RuntimeException("Vous ne pouvez supprimer que vos propres recherches");
+        }
+        rechercheRepository.delete(r);
+        return ResponseEntity.ok().build();
+    }
+
+    private Recherche buildRecherche(RechercheDtoRequest dto, Chercheur chercheur) {
+        return Recherche.builder()
                 .titre(dto.getTitre())
                 .domaine(dto.getDomaine())
                 .description(dto.getDescription())
@@ -69,7 +95,10 @@ public class RechercheController {
                 .duree(dto.getDuree())
                 .chercheur(chercheur)
                 .build();
-        return ResponseEntity.ok(toDto(rechercheRepository.save(recherche)));
+    }
+
+    private boolean matches(String field, String query) {
+        return field != null && field.toLowerCase().contains(query);
     }
 
     private RechercheDtoResponse toDto(Recherche r) {
@@ -89,4 +118,7 @@ public class RechercheController {
                 .typePublication("RECHERCHE")
                 .build();
     }
+    
+    
+    
 }

@@ -41,10 +41,16 @@ public class AdminController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * CORRECTION : passage explicite de isAdminDeletion=true
+     * pour éviter toute confusion avec userId=null dans PublicationService.
+     */
     @DeleteMapping("/publications/{id}")
     public ResponseEntity<Void> deletePublication(@PathVariable Long id) {
-        // Admin peut supprimer n'importe quelle publication
-        publicationService.delete(id, null);
+        publicationService.adminDelete(id);
         return ResponseEntity.ok().build();
     }
+    
+    
+    
 }

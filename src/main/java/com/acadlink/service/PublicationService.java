@@ -119,6 +119,23 @@ public class PublicationService {
                         .build())
                 .toList();
     }
+    
+ // ─── Ajouter cette méthode dans PublicationService.java ───────────────────
+    // (remplace le delete(id, null) dans AdminController)
+
+    /**
+     * Suppression admin : bypass du contrôle de propriété.
+     * Supprime aussi le fichier image associé.
+     */
+    @Transactional
+    public void adminDelete(Long publicationId) {
+        Publication p = publicationRepository.findById(publicationId)
+                .orElseThrow(() -> new RuntimeException("Publication non trouvée"));
+        if (p.getImageUrl() != null) {
+            fileStorageService.delete(p.getImageUrl());
+        }
+        publicationRepository.delete(p);
+    }
 
     private PublicationDtoResponse toDTO(Publication p, Long currentUserId) {
         return PublicationDtoResponse.builder()
