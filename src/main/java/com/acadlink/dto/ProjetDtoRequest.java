@@ -14,4 +14,6 @@ public class ProjetDtoRequest {
     private String tuteur;
     private Integer duree;
     private String apprentissage;
+    // AJOUT : id de l'enseignant collaborateur (optionnel)
+    private Long enseignantCollaborateurId;
 }

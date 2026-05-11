@@ -8,6 +8,7 @@ import com.acadlink.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +22,7 @@ public class PublicationService {
     private final LikeRepository likeRepository;
     private final CommentaireRepository commentaireRepository;
     private final NotificationService notificationService;
+    private final FileStorageService fileStorageService; // AJOUT
 
     public List<PublicationDtoResponse> getFeed(Long currentUserId) {
         return publicationRepository.findAllByOrderByDateDesc()
@@ -38,30 +40,50 @@ public class PublicationService {
         return toDTO(p, currentUserId);
     }
 
+    /**
+     * CORRECTION : accepte maintenant le MultipartFile.
+     * Si un fichier est fourni, il est stocké et l'URL est sauvegardée.
+     * Si non, on utilise imageUrl du DTO si présente, sinon null.
+     */
     @Transactional
-    public PublicationDtoResponse create(Long auteurId, PublicationDtoRequest dto) {
+    public PublicationDtoResponse create(Long auteurId, PublicationDtoRequest dto, MultipartFile file) {
         Utilisateur auteur = utilisateurRepository.findById(auteurId)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+        // Détermine l'URL de l'image
+        String imageUrl = null;
+        if (file != null && !file.isEmpty()) {
+            imageUrl = fileStorageService.store(file, "publications");
+        } else if (dto.getImageUrl() != null && !dto.getImageUrl().isBlank()) {
+            imageUrl = dto.getImageUrl();
+        }
+
         Publication p = Publication.builder()
                 .titre(dto.getTitre())
                 .domaine(dto.getDomaine())
                 .description(dto.getDescription())
-                .imageUrl(dto.getImageUrl())
+                .imageUrl(imageUrl)
                 .date(LocalDateTime.now())
                 .auteur(auteur)
                 .build();
         return toDTO(publicationRepository.save(p), auteurId);
     }
 
+    /**
+     * CORRECTION : supprime aussi le fichier image associé.
+     */
     @Transactional
     public void delete(Long publicationId, Long userId) {
         Publication p = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new RuntimeException("Publication non trouvée"));
-        // userId null = admin deletion (bypass owner check)
         if (userId != null && !p.getAuteur().getId().equals(userId)) {
             throw new RuntimeException("Vous ne pouvez supprimer que vos propres publications");
         }
-        publicationRepository.delete(p); // cascade supprime likes et commentaires
+        // Supprime le fichier image si présent
+        if (p.getImageUrl() != null) {
+            fileStorageService.delete(p.getImageUrl());
+        }
+        publicationRepository.delete(p);
     }
 
     @Transactional
@@ -111,7 +133,11 @@ public class PublicationService {
                 .auteurPhotoUrl(p.getAuteur().getPhotoUrl())
                 .likesCount(likeRepository.countByPublicationId(p.getId()))
                 .commentairesCount(p.getCommentaires().size())
-                .likedByCurrentUser(currentUserId != null && likeRepository.existsByPublicationIdAndUtilisateurId(p.getId(), currentUserId))
+                .likedByCurrentUser(currentUserId != null &&
+                        likeRepository.existsByPublicationIdAndUtilisateurId(p.getId(), currentUserId))
                 .build();
     }
+    
+    
+    
 }

@@ -5,6 +5,10 @@ import lombok.*;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class UtilisateurDTO {
+
+    // CORRECTION : id manquant — le frontend ne pouvait pas identifier l'utilisateur
+    private Long id;
+
     private String nomComplet;
     private String email;
     private String photoUrl;

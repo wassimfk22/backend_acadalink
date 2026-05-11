@@ -19,4 +19,7 @@ public class ProjetDtoResponse {
     private String auteurNom;
     private String auteurPhotoUrl;
     private String typePublication;
+    // AJOUT : info sur l'enseignant collaborateur (null si aucun)
+    private Long enseignantCollaborateurId;
+    private String enseignantCollaborateurNom;
 }
