@@ -6,9 +6,12 @@ import com.acadlink.dto.SimpleUserDTO;
 import com.acadlink.security.CustomUserDetails;
 import com.acadlink.service.PublicationService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -39,9 +42,10 @@ public class PublicationController {
         return ResponseEntity.ok(publicationService.getById(id, currentUserId));
     }
 
-    @PostMapping
+    @PostMapping (consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<PublicationDtoResponse> create(@AuthenticationPrincipal CustomUserDetails user,
-                                                  @RequestBody PublicationDtoRequest dto) {
+    		@RequestPart("publication") PublicationDtoRequest dto,
+            @RequestPart("file") MultipartFile file) {
         return ResponseEntity.ok(publicationService.create(user.getId(), dto));
     }
 

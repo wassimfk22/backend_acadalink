@@ -26,4 +26,7 @@ public class Projet {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "etudiant_id", nullable = false)
     private Etudiant etudiant;
+    
+    // On va ajouter un enseignant optionnel pour que l'etudiant puisse collaborer avec l'enseignant son projet 
+    
 }

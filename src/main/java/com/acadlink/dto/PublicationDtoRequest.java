@@ -8,6 +8,5 @@ public class PublicationDtoRequest {
     private String titre;
     private String domaine;
     private String description;
-    private String imageUrl;
 
 }
