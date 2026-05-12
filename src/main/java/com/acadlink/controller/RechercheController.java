@@ -29,7 +29,7 @@ public class RechercheController {
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<RechercheDtoResponse>> getByUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(rechercheRepository.findByChercheurId(userId).stream().map(this::toDto).toList());
+        return ResponseEntity.ok(rechercheRepository.findByUtilisateurId(userId).stream().map(this::toDto).toList());
     }
 
     @GetMapping("/{id}")
@@ -62,11 +62,11 @@ public class RechercheController {
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
         // Accepte CHERCHEUR et ENSEIGNANT (les deux peuvent publier des recherches)
-        if (baseUser.getRoleUtilisateur() == Role.CHERCHEUR && baseUser instanceof Chercheur chercheur) {
-            Recherche recherche = buildRecherche(dto, chercheur);
+        if (baseUser.getRoleUtilisateur() == Role.CHERCHEUR || baseUser.getRoleUtilisateur() == Role.ENSEIGNANT ) {
+            Recherche recherche = buildRecherche(dto, baseUser);
             return ResponseEntity.ok(toDto(rechercheRepository.save(recherche)));
         } else {
-            throw new RuntimeException("Seul un chercheur peut publier une recherche");
+            throw new RuntimeException("Seul un enseignant ou un chercheur peut publier une recherche");
         }
     }
 
@@ -76,14 +76,14 @@ public class RechercheController {
                                         @AuthenticationPrincipal CustomUserDetails user) {
         Recherche r = rechercheRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Recherche non trouvée"));
-        if (!r.getChercheur().getId().equals(user.getId())) {
+        if (!r.getUtilisateur().getId().equals(user.getId())) {
             throw new RuntimeException("Vous ne pouvez supprimer que vos propres recherches");
         }
         rechercheRepository.delete(r);
         return ResponseEntity.ok().build();
     }
 
-    private Recherche buildRecherche(RechercheDtoRequest dto, Chercheur chercheur) {
+    private Recherche buildRecherche(RechercheDtoRequest dto, Utilisateur utilisateur) {
         return Recherche.builder()
                 .titre(dto.getTitre())
                 .domaine(dto.getDomaine())
@@ -93,7 +93,7 @@ public class RechercheController {
                 .source(dto.getSource())
                 .ecole(dto.getEcole())
                 .duree(dto.getDuree())
-                .chercheur(chercheur)
+                .utilisateur(utilisateur)
                 .build();
     }
 
@@ -112,9 +112,9 @@ public class RechercheController {
                 .source(r.getSource())
                 .ecole(r.getEcole())
                 .duree(r.getDuree())
-                .auteurId(r.getChercheur().getId())
-                .auteurNom(r.getChercheur().getNomComplet())
-                .auteurPhotoUrl(r.getChercheur().getPhotoUrl())
+                .auteurId(r.getUtilisateur().getId())
+                .auteurNom(r.getUtilisateur().getNomComplet())
+                .auteurPhotoUrl(r.getUtilisateur().getPhotoUrl())
                 .typePublication("RECHERCHE")
                 .build();
     }

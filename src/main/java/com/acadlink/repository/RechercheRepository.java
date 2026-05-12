@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface RechercheRepository extends JpaRepository<Recherche, Long> {
-    List<Recherche> findByChercheurId(Long chercheurId);
+    List<Recherche> findByUtilisateurId(Long userId);
 }

@@ -15,6 +15,4 @@ public class Chercheur extends Utilisateur {
     private String objectif;
     private boolean doctorat;
 
-    @OneToMany(mappedBy = "chercheur", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Recherche> recherches = new ArrayList<>();
 }

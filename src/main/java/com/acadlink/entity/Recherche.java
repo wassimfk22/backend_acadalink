@@ -28,6 +28,6 @@ public class Recherche {
     private String conclusion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chercheur_id", nullable = false)
-    private Chercheur chercheur;
+    @JoinColumn(name = "utilisateur_id", nullable = false)
+    private Utilisateur utilisateur;
 }

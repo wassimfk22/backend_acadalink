@@ -41,4 +41,8 @@ public class Utilisateur {
 
     @OneToMany(mappedBy = "destinataire", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Notification> notifications = new ArrayList<>();
+    
+    @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Recherche> recherches = new ArrayList<>();
+    
 }
